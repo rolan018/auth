@@ -2,11 +2,12 @@ syntax = "proto3";
 
 package auth;
 
-option go_package = "authv1";
+option go_package = "auth.v1;authv1";
 
 service Auth {
     rpc Register (RegisterRequest) returns (RegisterResponse);
     rpc Login (LoginRequest) returns (LoginResponse);
+    rpc isAdmin(IsAdminRequest) returns (IsAdminResponse);
 }
 
 message RegisterRequest {
@@ -26,4 +27,12 @@ message LoginRequest {
 
 message LoginResponse {
     string token = 1;
+}
+
+message IsAdminRequest {
+    int64 user_id = 1;
+}
+
+message IsAdminResponse {
+    bool is_admin = 1;
 }
