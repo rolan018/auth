@@ -39,7 +39,9 @@ func main() {
 	// Graceful shutdown
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
-
+	signalStop := <-stop
+	application.GRPCApp.Stop()
+	log.Info("application stopped with", slog.String("signal", signalStop.String()))
 }
 
 func setupLogger(env string) *slog.Logger {
