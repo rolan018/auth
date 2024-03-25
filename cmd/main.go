@@ -41,7 +41,7 @@ func main() {
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
 	signalStop := <-stop
 	application.GRPCApp.Stop()
-	log.Info("application stopped with", slog.String("signal", signalStop.String()))
+	log.Info("application stopped with ", slog.String("signal", signalStop.String()))
 }
 
 func setupLogger(env string) *slog.Logger {
