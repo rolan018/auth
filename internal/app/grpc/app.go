@@ -25,7 +25,7 @@ func New(log *slog.Logger, port int) *App {
 }
 
 func (a *App) run() error {
-	const op = "grpcapp.Run()"
+	const op = "grpcapp.run()"
 
 	log := a.log.With(slog.String("op", op))
 
