@@ -1,6 +1,16 @@
-package migrator
+package main
 
-import "flag"
+import (
+	"errors"
+	"flag"
+	"fmt"
+
+	"github.com/golang-migrate/migrate/v4"
+	//Драйвер для миграций на sqlite3
+	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
+	//Драйвер для получения миграций из файлов
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+)
 
 func main() {
 	var (
@@ -18,4 +28,21 @@ func main() {
 		panic("storage-path and migrations-path is required")
 	}
 
+	m, err := migrate.New(
+		"file://"+migrationsPath,
+		fmt.Sprintf("sqlite3://%s?x-migrations-table=%s", storagePath, migrationsTable),
+	)
+
+	if err != nil {
+		panic(err)
+	}
+
+	if err := m.Up(); err != nil {
+		if errors.Is(err, migrate.ErrNoChange) {
+			fmt.Println("No migrations to apply")
+			return
+		}
+		panic(err)
+	}
+	fmt.Println("migrations applied successfully")
 }
