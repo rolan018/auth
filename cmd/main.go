@@ -21,20 +21,18 @@ func main() {
 
 	fmt.Println(cfg)
 
-	// TODO: инициализировать логгер
+	// инициализировать логгер
 
 	log := setupLogger(cfg.Env)
 
 	log.Info("Starting Application ...", slog.String("env", cfg.Env))
 
-	// TODO: инициализировать приложение
+	// инициализировать приложение
 
 	application := app.New(log, cfg.GRPC.Port, cfg.StoragePath, cfg.TokenTTL)
 
 	// start
 	go application.GRPCApp.MustRun()
-
-	// TODO: запустить gRPC-сервер приложения
 
 	// Graceful shutdown
 	stop := make(chan os.Signal, 1)

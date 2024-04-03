@@ -26,8 +26,14 @@ type Auth struct {
 	appProvider AppProvider
 }
 
+type Storage interface {
+	UserProvider
+	UserSaver
+	AppProvider
+}
+
 type UserSaver interface {
-	SaveUser(ctx context.Context, email string, passHash []byte) (uid int64, err error)
+	SaveUser(ctx context.Context, email string, passHash []byte) (int64, error)
 }
 
 type UserProvider interface {
@@ -40,8 +46,13 @@ type AppProvider interface {
 }
 
 // New returns Auth service
-func New(log *slog.Logger, storage Storage) *Auth {
-	return &Auth{}
+func New(log *slog.Logger, tokenTTL time.Duration, storage Storage) *Auth {
+
+	return &Auth{log: log,
+		tokenTTL:    tokenTTL,
+		usrSaver:    storage,
+		usrProvider: storage,
+		appProvider: storage}
 }
 
 func (a *Auth) Login(ctx context.Context, email string, password string, appID int) (string, error) {
