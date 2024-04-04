@@ -19,6 +19,7 @@ type Auth interface {
 	Login(ctx context.Context, email string, password string, appID int) (token string, err error)
 	RegisterNewUser(ctx context.Context, email string, password string) (userID int64, err error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
+	CreateApp(ctx context.Context, email string, password string, app_name string, app_secret string) (int64, error)
 }
 
 type serverAPI struct {
@@ -66,7 +67,35 @@ func (s *serverAPI) IsAdmin(ctx context.Context, req *authv1.IsAdminRequest) (*a
 	return &authv1.IsAdminResponse{IsAdmin: isAdmin}, nil
 }
 
+func (s *serverAPI) CreateApp(ctx context.Context, req *authv1.CreateAppRequest) (*authv1.CreateAppResponse, error) {
+	if err := validateCreate(req); err != nil {
+		return nil, err
+	}
+	// service layer
+	appID, err := s.auth.CreateApp(ctx, req.GetEmail(), req.GetPassword(), req.GetAppName(), req.GetAppSecret())
+	if err != nil {
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	return &authv1.CreateAppResponse{AppId: appID}, nil
+}
+
 // Validators
+func validateCreate(req *authv1.CreateAppRequest) error {
+	if err := validateRequest(req.GetAppName(), emptyStringValue); err != nil {
+		return err
+	}
+	if err := validateRequest(req.GetAppSecret(), emptyStringValue); err != nil {
+		return err
+	}
+	if err := validateRequest(req.GetEmail(), emptyStringValue); err != nil {
+		return err
+	}
+	if err := validateRequest(req.GetPassword(), emptyStringValue); err != nil {
+		return err
+	}
+	return nil
+}
+
 func validateLogin(req *authv1.LoginRequest) error {
 	if err := validateRequest(req.GetAppId(), emptyIntValue); err != nil {
 		return err

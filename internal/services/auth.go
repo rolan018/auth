@@ -16,6 +16,7 @@ import (
 
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrNotAdminRights     = errors.New("user doesn't have admin rights")
 )
 
 type Auth struct {
@@ -43,6 +44,7 @@ type UserProvider interface {
 
 type AppProvider interface {
 	App(ctx context.Context, appID int) (models.App, error)
+	CreateApp(ctx context.Context, app_name string, app_secret string) (int64, error)
 }
 
 // New returns Auth service
@@ -132,4 +134,46 @@ func (a *Auth) IsAdmin(ctx context.Context, userID int64) (bool, error) {
 	}
 	log.Info("checked if user is admin", slog.Bool("is_admin", isAdmin))
 	return isAdmin, nil
+}
+
+func (a *Auth) CreateApp(ctx context.Context, email string, password string, app_name string, app_secret string) (int64, error) {
+	const op = "auth.CreateApp"
+
+	log := a.log.With(
+		slog.String("op", op),
+		slog.String("app_name", app_name),
+	)
+	// check profile
+	usr, err := a.usrProvider.User(ctx, email)
+	if err != nil {
+		if errors.Is(err, storage.ErrUserNotFound) {
+			a.log.Warn("user not found")
+			return 0, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		}
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	// check password
+	err = bcrypt.CompareHashAndPassword(usr.PassHash, []byte(password))
+	if err != nil {
+		a.log.Info("invalid credentials", err)
+		return 0, fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+	}
+	// check admin rights
+	isAdmin, err := a.IsAdmin(ctx, usr.ID)
+	if err != nil {
+		return 0, err
+	}
+	if !isAdmin {
+		log.Warn("user not a admin")
+		return 0, fmt.Errorf("%s: %w", op, ErrNotAdminRights)
+	}
+	// create new app
+	log.Info("registering new app")
+	appID, err := a.appProvider.CreateApp(ctx, app_name, app_secret)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+	log.Info("app created")
+	return appID, nil
 }

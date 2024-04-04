@@ -108,3 +108,23 @@ func (s *Storage) App(ctx context.Context, appID int) (models.App, error) {
 	}
 	return app, nil
 }
+
+func (s *Storage) CreateApp(ctx context.Context, app_name string, app_secret string) (int64, error) {
+	const op = "storage.sqlite.CreateApp"
+	// Подготовка запроса
+	stmt, err := s.db.Prepare("INSERT INTO apps(name, secret) VALUES(?, ?)")
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+	// Добавление приложения
+	res, err := stmt.ExecContext(ctx, app_name, app_secret)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+	// Получаем id созданной записи
+	appID, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+	return appID, nil
+}
