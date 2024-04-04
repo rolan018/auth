@@ -16,7 +16,7 @@ const (
 )
 
 func main() {
-	// TODO: инициализировать проект
+	// инициализировать проект
 	cfg := config.EnvLoad()
 
 	fmt.Println(cfg)
