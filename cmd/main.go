@@ -1,10 +1,13 @@
 package main
 
 import (
+	"auth/internal/app"
 	"auth/internal/config"
 	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
@@ -13,19 +16,30 @@ const (
 )
 
 func main() {
-	// TODO: инициализировать проект
+	// инициализировать проект
 	cfg := config.EnvLoad()
 
 	fmt.Println(cfg)
 
-	// TODO: инициализировать логгер
+	// инициализировать логгер
 
 	log := setupLogger(cfg.Env)
 
 	log.Info("Starting Application ...", slog.String("env", cfg.Env))
-	// TODO: инициализировать приложение
 
-	// TODO: запустить gRPC-сервер приложения
+	// инициализировать приложение
+
+	application := app.New(log, cfg.GRPC.Port, cfg.StoragePath, cfg.TokenTTL)
+
+	// start
+	go application.GRPCApp.MustRun()
+
+	// Graceful shutdown
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+	signalStop := <-stop
+	application.GRPCApp.Stop()
+	log.Info("application stopped", slog.String("signal", signalStop.String()))
 }
 
 func setupLogger(env string) *slog.Logger {
